@@ -29,28 +29,33 @@ def log_in(request):
     else:
         login(request, User.objects.get(username=request.data['username'], password=request.data['password']))
         return Response(status=status.HTTP_200_OK)
+
 @api_view(['GET'])
-@login_required
 def log_out(request):
-    logout(request)
-    return Response(status=status.HTTP_200_OK)
+    if request.user.is_authenticated:
+        logout(request)
+        return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['PUT'])
-@login_required
 def edit_user(request):
-    user = request.user
-    serializer = UserSerializer(user, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if request.user.is_authenticated:
+        user = request.user
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
-@login_required
 def get_user(request):
-    user = request.user
-    serializer = UserSerializer(user)
-    return Response(serializer.data)
+    if not request.user.is_authenticated:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
 @api_view(['DELETE'])
 @login_required
